@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⏰ Timestamp Converter</title>
-    
+
     <!-- Load Day.js from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js" integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js" integrity="sha384-TDBg/mCj+oYkZ1ICA3eRE8wZ8pWi5rI4dOiNLzsqr2yD/URay0KLidCnoQbp91uR" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js" integrity="sha384-LscaYdErRSQej71MTUTT+VCL6X13unRNIDYGKRTUzG9/170GXKRQbXn6U1ZrY08I" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js" integrity="sha384-3Widcbv7gnkZageHLPaEWrAqIUszz+mV/CIq6SRCv1am0lCnXmbOezw0Whk6Fz54" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js" integrity="sha384-K60bZCD72oOR/MuW1kPgOQ105VLQ1QyAjK7nTFW1fUra3ev8z7o5I0Vlu3lLuQ6T" crossorigin="anonymous"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"
+        integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"
+        integrity="sha384-TDBg/mCj+oYkZ1ICA3eRE8wZ8pWi5rI4dOiNLzsqr2yD/URay0KLidCnoQbp91uR"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"
+        integrity="sha384-LscaYdErRSQej71MTUTT+VCL6X13unRNIDYGKRTUzG9/170GXKRQbXn6U1ZrY08I"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"
+        integrity="sha384-3Widcbv7gnkZageHLPaEWrAqIUszz+mV/CIq6SRCv1am0lCnXmbOezw0Whk6Fz54"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/advancedFormat.js"
+        integrity="sha384-K60bZCD72oOR/MuW1kPgOQ105VLQ1QyAjK7nTFW1fUra3ev8z7o5I0Vlu3lLuQ6T"
+        crossorigin="anonymous"></script>
+
     <style>
         :root {
             --bg-gradient-start: #667eea;
@@ -32,7 +43,7 @@
             --border-color: #e0e0e0;
             --shadow: rgba(0, 0, 0, 0.3);
         }
-        
+
         body.dark-mode {
             --bg-gradient-start: #1a1a2e;
             --bg-gradient-end: #16213e;
@@ -52,13 +63,13 @@
             --border-color: #2d4059;
             --shadow: rgba(0, 0, 0, 0.6);
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
@@ -69,7 +80,7 @@
             padding: 20px;
             transition: background 0.3s ease;
         }
-        
+
         .container {
             background: var(--container-bg);
             border-radius: 16px;
@@ -80,7 +91,7 @@
             transition: background 0.3s ease, box-shadow 0.3s ease;
             position: relative;
         }
-        
+
         .theme-toggle {
             position: absolute;
             top: 20px;
@@ -97,13 +108,13 @@
             font-size: 20px;
             transition: all 0.3s ease;
         }
-        
+
         .theme-toggle:hover {
             transform: scale(1.1);
             background: var(--input-focus);
             border-color: var(--input-focus);
         }
-        
+
         h1 {
             text-align: center;
             color: var(--text-primary);
@@ -111,11 +122,11 @@
             font-size: 28px;
             transition: color 0.3s ease;
         }
-        
+
         .converter-section {
             margin-bottom: 25px;
         }
-        
+
         label {
             display: block;
             font-weight: 600;
@@ -126,7 +137,7 @@
             letter-spacing: 0.5px;
             transition: color 0.3s ease;
         }
-        
+
         input[type="text"] {
             width: 100%;
             padding: 12px 16px;
@@ -138,23 +149,23 @@
             color: var(--text-primary);
             transition: border-color 0.3s, background 0.3s, color 0.3s;
         }
-        
+
         input[type="text"]:focus {
             outline: none;
             border-color: var(--input-focus);
         }
-        
+
         input[type="text"].error {
             border-color: var(--input-error-border);
             background-color: var(--input-error-bg);
         }
-        
+
         .button-group {
             margin-top: 10px;
             display: flex;
             gap: 10px;
         }
-        
+
         button {
             flex: 1;
             padding: 10px 20px;
@@ -167,19 +178,19 @@
             cursor: pointer;
             transition: background 0.3s, transform 0.1s;
         }
-        
+
         button:hover {
             background: var(--button-hover);
         }
-        
+
         button:active {
             transform: scale(0.98);
         }
-        
+
         button.success {
             background: #51cf66;
         }
-        
+
         .info {
             text-align: center;
             color: var(--text-tertiary);
@@ -189,7 +200,7 @@
             border-top: 1px solid var(--border-color);
             transition: color 0.3s ease, border-color 0.3s ease;
         }
-        
+
         .timezone-info {
             background: var(--info-bg);
             padding: 12px;
@@ -200,7 +211,7 @@
             text-align: center;
             transition: background 0.3s ease, color 0.3s ease;
         }
-        
+
         .format-section {
             background: var(--info-bg);
             padding: 16px;
@@ -208,26 +219,26 @@
             margin-top: 20px;
             transition: background 0.3s ease;
         }
-        
+
         .format-section label {
             margin-bottom: 8px;
         }
-        
+
         .format-controls {
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .format-controls input[type="text"] {
             flex: 1;
         }
-        
+
         .format-controls button {
             flex: 0 0 auto;
             padding: 10px 16px;
         }
-        
+
         .format-help {
             font-size: 11px;
             color: var(--text-tertiary);
@@ -235,30 +246,32 @@
             font-family: 'Courier New', monospace;
             transition: color 0.3s ease;
         }
-        
+
         .format-help a {
             color: var(--input-focus);
             transition: opacity 0.3s ease;
         }
-        
+
         .format-help a:hover {
             opacity: 0.8;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
         <h1>⏰ Timestamp Converter</h1>
-        
+
         <div class="converter-section">
             <label for="localTime">Input Time</label>
-            <input type="text" id="localTime" placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00)">
+            <input type="text" id="localTime"
+                placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 or 2025-12-16T08:42:00-05:00)">
             <div class="button-group">
                 <button id="copyLocal">Copy Input Time</button>
             </div>
         </div>
-        
+
         <div class="converter-section">
             <label for="utcTime">UTC</label>
             <input type="text" id="utcTime" placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 UTC)">
@@ -266,11 +279,11 @@
                 <button id="copyUtc">Copy UTC</button>
             </div>
         </div>
-        
+
         <div class="timezone-info">
             Your local timezone: <strong id="localTimezone">Loading...</strong>
         </div>
-        
+
         <div class="format-section">
             <label for="formatInput">Output Format</label>
             <div class="format-controls">
@@ -278,11 +291,13 @@
                 <button id="resetFormat">Reset</button>
             </div>
             <div class="format-help">
-                Uses Day.js format tokens: YYYY=year, MM=month, DD=day, HH=hour, mm=minute, ss=second | Use [brackets] for literal text<br>
-                <a href="https://day.js.org/docs/en/display/format" target="_blank" style="color: #667eea;">View full format documentation →</a>
+                Uses Day.js format tokens: YYYY=year, MM=month, DD=day, HH=hour, mm=minute, ss=second | Use [brackets]
+                for literal text<br>
+                <a href="https://day.js.org/docs/en/display/format" target="_blank" style="color: #667eea;">View full
+                    format documentation →</a>
             </div>
         </div>
-        
+
         <div class="info">
             Paste or type a timestamp in either field to convert automatically
         </div>
@@ -294,7 +309,7 @@
         dayjs.extend(window.dayjs_plugin_timezone);
         dayjs.extend(window.dayjs_plugin_customParseFormat);
         dayjs.extend(window.dayjs_plugin_advancedFormat);
-        
+
         // Get DOM elements
         const localInput = document.getElementById('localTime');
         const utcInput = document.getElementById('utcTime');
@@ -304,15 +319,15 @@
         const formatInput = document.getElementById('formatInput');
         const resetFormatBtn = document.getElementById('resetFormat');
         const themeToggleBtn = document.getElementById('themeToggle');
-        
+
         // Theme management
         const THEME_KEY = 'timeswap-theme';
         const LIGHT_THEME = 'light';
         const DARK_THEME = 'dark';
-        
+
         // Load theme from localStorage or default to light
         let currentTheme = localStorage.getItem(THEME_KEY) || LIGHT_THEME;
-        
+
         function applyTheme(theme) {
             if (theme === DARK_THEME) {
                 document.body.classList.add('dark-mode');
@@ -326,33 +341,33 @@
             currentTheme = theme;
             localStorage.setItem(THEME_KEY, theme);
         }
-        
+
         function toggleTheme() {
             const newTheme = currentTheme === LIGHT_THEME ? DARK_THEME : LIGHT_THEME;
             applyTheme(newTheme);
         }
-        
+
         // Apply saved theme on load
         applyTheme(currentTheme);
-        
+
         // Theme toggle button event listener
         themeToggleBtn.addEventListener('click', toggleTheme);
-        
+
         // Detect local timezone
         const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const timezoneAbbr = dayjs().tz(localTimezone).format('z');
         timezoneDisplay.textContent = `${localTimezone} (${timezoneAbbr})`;
-        
+
         // Flag to prevent infinite loops during conversion
         let isConverting = false;
-        
+
         // Default output format
         const DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
-        
+
         // Load format from localStorage or use default
         let OUTPUT_FORMAT = localStorage.getItem('timestampFormat') || DEFAULT_FORMAT;
         formatInput.value = OUTPUT_FORMAT;
-        
+
         // Supported input formats for parsing
         const PARSE_FORMATS = [
             'YYYY-MM-DD HH:mm:ss',
@@ -367,7 +382,7 @@
             'DD/MM/YYYY HH:mm',
             'DD/MM/YYYY'
         ];
-        
+
         /**
          * Parse a timestamp string robustly
          */
@@ -375,9 +390,9 @@
             if (!input || input.trim() === '') {
                 return null;
             }
-            
+
             input = input.trim();
-            
+
             // Try parsing as Unix timestamp (seconds)
             if (/^\d+$/.test(input)) {
                 const timestamp = parseInt(input, 10);
@@ -388,13 +403,13 @@
                     return dayjs(timestamp);
                 }
             }
-            
+
             // Try ISO format and other formats
             let parsed = dayjs(input);
             if (parsed.isValid()) {
                 return parsed;
             }
-            
+
             // Try with custom formats
             for (const format of PARSE_FORMATS) {
                 parsed = dayjs(input, format, true);
@@ -402,22 +417,37 @@
                     return parsed;
                 }
             }
-            
+
             return null;
         }
-        
+
         /**
          * Convert local time to UTC
          */
         function localToUtc(input) {
             if (isConverting) return;
             isConverting = true;
-            
+
             const parsed = parseTimestamp(input);
-            
+
             if (parsed) {
-                // Interpret as local time and convert to UTC
-                const utcTime = parsed.tz(localTimezone).utc().tz('UTC');
+                // Check if the input contains timezone offset information that Day.js can parse
+                // Only ISO 8601 formats with numeric offsets (e.g., +05:00, -0500, Z)
+                const hasTimezoneOffset = /[+-]\d{2}:?\d{2}|Z$/i.test(input.trim());
+
+                // Normalize moment to the correct absolute instant
+                let normalizedMoment;
+                if (hasTimezoneOffset) {
+                    // Parsed value already encodes its own offset
+                    normalizedMoment = parsed.utc();
+                } else {
+                    // No offset present: interpret as local time and convert to UTC
+                    normalizedMoment = parsed.tz(localTimezone, true).utc();
+                }
+
+                // Force timezone context to UTC so formatting always shows UTC
+                const utcTime = normalizedMoment.tz('UTC');
+
                 utcInput.value = utcTime.format(OUTPUT_FORMAT);
                 utcInput.classList.remove('error');
                 localInput.classList.remove('error');
@@ -428,22 +458,22 @@
                 utcInput.value = '';
                 localInput.classList.remove('error');
             }
-            
+
             isConverting = false;
         }
-        
+
         /**
          * Convert UTC to local time
          */
         function utcToLocal(input) {
             if (isConverting) return;
             isConverting = true;
-            
+
             // Remove " UTC" suffix if present
             input = input.replace(/\s+UTC$/i, '').trim();
-            
+
             const parsed = parseTimestamp(input);
-            
+
             if (parsed) {
                 // Interpret as UTC and convert to local time
                 const localTime = parsed.utc().tz(localTimezone);
@@ -457,22 +487,22 @@
                 localInput.value = '';
                 utcInput.classList.remove('error');
             }
-            
+
             isConverting = false;
         }
-        
+
         /**
          * Copy text to clipboard
          */
         async function copyToClipboard(text, button) {
             if (!text) return;
-            
+
             try {
                 await navigator.clipboard.writeText(text);
                 const originalText = button.textContent;
                 button.textContent = '✓ Copied!';
                 button.classList.add('success');
-                
+
                 setTimeout(() => {
                     button.textContent = originalText;
                     button.classList.remove('success');
@@ -485,64 +515,64 @@
                 }, 2000);
             }
         }
-        
+
         // Event listeners for conversion
         localInput.addEventListener('input', (e) => {
             localToUtc(e.target.value);
         });
-        
+
         utcInput.addEventListener('input', (e) => {
             utcToLocal(e.target.value);
         });
-        
+
         // Auto-select text on mouse enter
         localInput.addEventListener('mouseenter', (e) => {
             e.target.select();
         });
-        
+
         utcInput.addEventListener('mouseenter', (e) => {
             e.target.select();
         });
-        
+
         formatInput.addEventListener('mouseenter', (e) => {
             e.target.select();
         });
-        
+
         // Event listeners for copy buttons
         copyLocalBtn.addEventListener('click', () => {
             copyToClipboard(localInput.value, copyLocalBtn);
         });
-        
+
         copyUtcBtn.addEventListener('click', () => {
             copyToClipboard(utcInput.value, copyUtcBtn);
         });
-        
+
         // Event listener for format changes
         formatInput.addEventListener('input', (e) => {
             const newFormat = e.target.value.trim();
             if (newFormat) {
                 OUTPUT_FORMAT = newFormat;
                 localStorage.setItem('timestampFormat', OUTPUT_FORMAT);
-                
+
                 // Re-convert current values with new format
                 if (localInput.value) {
                     localToUtc(localInput.value);
                 }
             }
         });
-        
+
         // Event listener for reset format button
         resetFormatBtn.addEventListener('click', () => {
             OUTPUT_FORMAT = DEFAULT_FORMAT;
             formatInput.value = DEFAULT_FORMAT;
             localStorage.setItem('timestampFormat', DEFAULT_FORMAT);
-            
+
             // Re-convert current values with default format
             if (localInput.value) {
                 localToUtc(localInput.value);
             }
         });
-        
+
         // Initialize with current time
         window.addEventListener('load', () => {
             const now = dayjs();
@@ -551,4 +581,5 @@
         });
     </script>
 </body>
+
 </html>

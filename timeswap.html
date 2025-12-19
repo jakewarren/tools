@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⏰ Timestamp Converter</title>
 
+    <!-- Load Chrono.js for robust date parsing (browser build) -->
+    <script src="https://cdn.jsdelivr.net/npm/chrono-node@1.4.8/dist/chrono.min.js"
+        integrity="sha384-QQ9OclfOg8G5XSdbe3NhrfR4OnaJ3CYO63I4yzBPagmDetEQmaVGIoOladQmdC3X"
+        crossorigin="anonymous"></script>
+
     <!-- Load Day.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"
         integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky"
@@ -266,7 +271,7 @@
         <div class="converter-section">
             <label for="localTime">Input Time</label>
             <input type="text" id="localTime"
-                placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 or 2025-12-16T08:42:00-05:00)">
+                placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 PST or 2025-12-16T08:42:00-05:00)">
             <div class="button-group">
                 <button id="copyLocal">Copy Input Time</button>
             </div>
@@ -391,30 +396,51 @@
                 return null;
             }
 
-            input = input.trim();
+            const originalInput = input.trim();
+            const numericOffsetPattern = /([+-]\d{2}:?\d{2}|Z)$/i;
+            const hasNumericOffset = numericOffsetPattern.test(originalInput);
 
-            // Try parsing as Unix timestamp (seconds)
-            if (/^\d+$/.test(input)) {
-                const timestamp = parseInt(input, 10);
-                // Check if it's in seconds (10 digits) or milliseconds (13 digits)
-                if (input.length === 10) {
-                    return dayjs.unix(timestamp);
-                } else if (input.length === 13) {
-                    return dayjs(timestamp);
+            // Try parsing as Unix timestamp (seconds or milliseconds)
+            if (/^\d+$/.test(originalInput)) {
+                const timestamp = parseInt(originalInput, 10);
+                const parsedUnix = originalInput.length === 10 ? dayjs.unix(timestamp) : dayjs(timestamp);
+                return {
+                    date: parsedUnix,
+                    hasExplicitTimezone: true
+                };
+            }
+
+            // Use Chrono.js for robust parsing (handles timezone abbreviations & natural language)
+            if (typeof chrono !== 'undefined') {
+                const chronoResults = chrono.parse(originalInput);
+                if (chronoResults.length > 0) {
+                    const chronoDate = chronoResults[0];
+                    const chronoDayjs = dayjs(chronoDate.start.date());
+                    const chronoHasTimezone = chronoDate.start.isCertain('timezoneOffset');
+                    return {
+                        date: chronoDayjs,
+                        hasExplicitTimezone: chronoHasTimezone
+                    };
                 }
             }
 
-            // Try ISO format and other formats
-            let parsed = dayjs(input);
+            // Try ISO format and Day.js default parser
+            let parsed = dayjs(originalInput);
             if (parsed.isValid()) {
-                return parsed;
+                return {
+                    date: parsed,
+                    hasExplicitTimezone: hasNumericOffset
+                };
             }
 
             // Try with custom formats
             for (const format of PARSE_FORMATS) {
-                parsed = dayjs(input, format, true);
+                parsed = dayjs(originalInput, format, true);
                 if (parsed.isValid()) {
-                    return parsed;
+                    return {
+                        date: parsed,
+                        hasExplicitTimezone: hasNumericOffset
+                    };
                 }
             }
 
@@ -428,25 +454,17 @@
             if (isConverting) return;
             isConverting = true;
 
-            const parsed = parseTimestamp(input);
+            const parsedResult = parseTimestamp(input);
 
-            if (parsed) {
-                // Check if the input contains timezone offset information that Day.js can parse
-                // Only ISO 8601 formats with numeric offsets (e.g., +05:00, -0500, Z)
-                const hasTimezoneOffset = /[+-]\d{2}:?\d{2}|Z$/i.test(input.trim());
+            if (parsedResult) {
+                const { date, hasExplicitTimezone } = parsedResult;
 
-                // Normalize moment to the correct absolute instant
-                let normalizedMoment;
-                if (hasTimezoneOffset) {
-                    // Parsed value already encodes its own offset
-                    normalizedMoment = parsed.utc();
+                let utcTime;
+                if (hasExplicitTimezone) {
+                    utcTime = date.tz('UTC');
                 } else {
-                    // No offset present: interpret as local time and convert to UTC
-                    normalizedMoment = parsed.tz(localTimezone, true).utc();
+                    utcTime = date.tz(localTimezone, true).utc().tz('UTC');
                 }
-
-                // Force timezone context to UTC so formatting always shows UTC
-                const utcTime = normalizedMoment.tz('UTC');
 
                 utcInput.value = utcTime.format(OUTPUT_FORMAT);
                 utcInput.classList.remove('error');
@@ -472,11 +490,12 @@
             // Remove " UTC" suffix if present
             input = input.replace(/\s+UTC$/i, '').trim();
 
-            const parsed = parseTimestamp(input);
+            const parsedResult = parseTimestamp(input);
 
-            if (parsed) {
+            if (parsedResult) {
+                const { date } = parsedResult;
                 // Interpret as UTC and convert to local time
-                const localTime = parsed.utc().tz(localTimezone);
+                const localTime = date.tz('UTC').tz(localTimezone);
                 localInput.value = localTime.format(OUTPUT_FORMAT);
                 localInput.classList.remove('error');
                 utcInput.classList.remove('error');

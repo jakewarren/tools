@@ -150,7 +150,7 @@
         tables.forEach(function (table, index) {
             if (!table.parentNode) return;
 
-            var token = markerBase + index;
+            var token = markerBase + '_' + index + '_';
             var markdown = tableToMarkdown(table);
             var markerNode = doc.createTextNode('\n' + token + '\n');
             table.parentNode.replaceChild(markerNode, table);

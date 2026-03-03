@@ -25,24 +25,12 @@
     }
 
     // ---------------------------------------------------------------------------
-    // Spreadsheet detection + direct table → markdown conversion
+    // Direct table → markdown conversion
     //
-    // Excel and Google Sheets both put `text/html` on the clipboard, but the HTML
-    // is full of noise (Office XML namespaces, conditional comments, dense inline
-    // styles, <span> wrappers in every cell) that confuses Turndown's GFM table
-    // rule.  We detect those sources and convert tables directly from the DOM
-    // instead, using textContent to strip all the formatting noise.
+    // For HTML that includes tables, we convert table DOM directly using
+    // textContent to avoid noisy inline styles/wrappers (common in spreadsheet
+    // sources) and preserve clean GFM table output.
     // ---------------------------------------------------------------------------
-
-    function isSpreadsheetHtml(html) {
-        return (
-            html.indexOf('google-sheets-html-origin') !== -1 ||
-            // Microsoft Office / Excel markers
-            html.indexOf('schemas-microsoft-com:office:excel') !== -1 ||
-            html.indexOf('xmlns:x="urn:schemas-microsoft-com') !== -1 ||
-            html.indexOf('xmlns:o="urn:schemas-microsoft-com') !== -1
-        );
-    }
 
     // Return the plain-text content of a cell, escaping pipe characters so they
     // don't break the GFM table syntax.
@@ -57,7 +45,10 @@
     // proxy for "this is a header row" in Google Sheets, which uses <td> for
     // everything but applies font-weight:700 to cells the user has bolded.
     function rowIsBold(row) {
-        var cells = Array.from(row.querySelectorAll('td, th'));
+        var cells = Array.from(row.children).filter(function (child) {
+            var tag = child.tagName && child.tagName.toLowerCase();
+            return tag === 'td' || tag === 'th';
+        });
         if (!cells.length) return false;
         var boldCount = cells.filter(function (cell) {
             var style = cell.getAttribute('style') || '';
@@ -72,8 +63,26 @@
     // Convert a single <table> DOM element to a GFM markdown table string.
     // colspan is handled by repeating the cell value; rowspan is ignored (GFM
     // tables have no equivalent).
+    function getTableRows(table) {
+        var rows = [];
+        Array.from(table.children).forEach(function (child) {
+            var tag = child.tagName && child.tagName.toLowerCase();
+            if (tag === 'tr') {
+                rows.push(child);
+                return;
+            }
+            if (tag === 'thead' || tag === 'tbody' || tag === 'tfoot') {
+                Array.from(child.children).forEach(function (sectionChild) {
+                    var sectionTag = sectionChild.tagName && sectionChild.tagName.toLowerCase();
+                    if (sectionTag === 'tr') rows.push(sectionChild);
+                });
+            }
+        });
+        return rows;
+    }
+
     function tableToMarkdown(table) {
-        var rows = Array.from(table.querySelectorAll('tr'));
+        var rows = getTableRows(table);
         if (!rows.length) return '';
 
         // Detect whether the table has a semantic header.
@@ -81,11 +90,16 @@
         // - bold first row: Google Sheets (uses <tbody><td> everywhere but bolds
         //   header cells when the user has formatted them as headers)
         var hasHeader = table.querySelector('thead') !== null ||
-            (rows[0] && rows[0].querySelector('th') !== null) ||
+            (rows[0] && Array.from(rows[0].children).some(function (child) {
+                return child.tagName && child.tagName.toLowerCase() === 'th';
+            })) ||
             (rows[0] && rowIsBold(rows[0]));
 
         var grid = rows.map(function (row) {
-            return Array.from(row.querySelectorAll('td, th')).reduce(function (acc, cell) {
+            return Array.from(row.children).filter(function (child) {
+                var tag = child.tagName && child.tagName.toLowerCase();
+                return tag === 'td' || tag === 'th';
+            }).reduce(function (acc, cell) {
                 var span = parseInt(cell.getAttribute('colspan'), 10) || 1;
                 var text = cellText(cell);
                 for (var i = 0; i < span; i++) acc.push(text);
@@ -124,12 +138,42 @@
         }
     }
 
-    // Parse all tables from spreadsheet HTML and return them as GFM markdown.
-    function convertSpreadsheetHtml(html) {
-        var doc = new DOMParser().parseFromString(html, 'text/html');
+    function convertHtmlWithTables(html) {
+        var cleaned = cleanHtml(html);
+        var doc = new DOMParser().parseFromString(cleaned, 'text/html');
         var tables = Array.from(doc.querySelectorAll('table'));
-        if (!tables.length) return null;
-        return tables.map(tableToMarkdown).filter(Boolean).join('\n\n');
+        if (!tables.length) return getTurndown().turndown(cleaned);
+
+        var markerBase = 'C2MTABLETOKEN' + Date.now().toString(36) + Math.random().toString(36).slice(2).toUpperCase();
+        var replacements = [];
+
+        tables.forEach(function (table, index) {
+            if (!table.parentNode) return;
+
+            var token = markerBase + index;
+            var markdown = tableToMarkdown(table);
+            var markerNode = doc.createTextNode('\n' + token + '\n');
+            table.parentNode.replaceChild(markerNode, table);
+            replacements.push({ token: token, markdown: markdown });
+        });
+
+        if (!replacements.length) return getTurndown().turndown(cleaned);
+
+        var markdown = getTurndown().turndown(doc.body.innerHTML);
+        var matchedTokens = replacements.filter(function (item) {
+            return markdown.indexOf(item.token) !== -1;
+        }).length;
+
+        if (matchedTokens !== replacements.length) {
+            return getTurndown().turndown(cleaned);
+        }
+
+        replacements.forEach(function (item) {
+            var replacement = item.markdown ? ('\n\n' + item.markdown + '\n\n') : '\n\n';
+            markdown = markdown.split(item.token).join(replacement);
+        });
+
+        return markdown.replace(/\n{3,}/g, '\n\n').trim();
     }
 
     // ---------------------------------------------------------------------------
@@ -151,11 +195,7 @@
     // ---------------------------------------------------------------------------
 
     function convertHtmlToMarkdown(html) {
-        if (isSpreadsheetHtml(html)) {
-            var result = convertSpreadsheetHtml(html);
-            if (result) return result;
-        }
-        return getTurndown().turndown(cleanHtml(html));
+        return convertHtmlWithTables(html);
     }
 
     // ---------------------------------------------------------------------------

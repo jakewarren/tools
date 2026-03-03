@@ -150,7 +150,7 @@
         tables.forEach(function (table, index) {
             if (!table.parentNode) return;
 
-            var token = markerBase + '_' + index + '_';
+            var token = markerBase + index;
             var markdown = tableToMarkdown(table);
             var markerNode = doc.createTextNode('\n' + token + '\n');
             table.parentNode.replaceChild(markerNode, table);
@@ -168,7 +168,9 @@
             return getTurndown().turndown(cleaned);
         }
 
-        replacements.forEach(function (item) {
+        // Replace in descending index order so a token like "...1" is never
+        // replaced before "...10", which would corrupt the longer token.
+        replacements.slice().reverse().forEach(function (item) {
             var replacement = item.markdown ? ('\n\n' + item.markdown + '\n\n') : '\n\n';
             markdown = markdown.split(item.token).join(replacement);
         });

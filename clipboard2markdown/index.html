@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Paste to Markdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://unpkg.com/turndown-plugin-gfm/turndown-plugin-gfm.js"></script>
+    <script src="clipboard2markdown.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 860px;
+            margin: 8vh auto;
+            padding: 0 1.5rem;
+            background: #fff;
+            color: #111;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 0.25rem;
+        }
+
+        h2 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #555;
+            margin-top: 0;
+        }
+
+        ol {
+            padding-left: 1.4rem;
+            line-height: 1.8;
+        }
+
+        code {
+            font-family: Consolas, "Liberation Mono", Courier, monospace;
+            background: #f0f0f0;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        #pastebin {
+            opacity: 0.01;
+            width: 100%;
+            height: 1px;
+            overflow: hidden;
+            position: absolute;
+        }
+
+        #wrapper {
+            margin-top: 1.5rem;
+        }
+
+        #wrapper.hidden {
+            display: none;
+        }
+
+        #output {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+            font-family: Consolas, "Liberation Mono", Courier, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            min-height: 60vh;
+            overflow: auto;
+            padding: 12px 14px;
+            resize: vertical;
+            width: 100%;
+            outline: none;
+        }
+
+        #copy-btn {
+            margin-top: 0.6rem;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f5f5f5;
+        }
+
+        #copy-btn:hover {
+            background: #e8e8e8;
+        }
+
+        #status {
+            display: inline-block;
+            margin-left: 0.75rem;
+            font-size: 13px;
+            color: #555;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1a1a1a;
+                color: #e0e0e0;
+            }
+
+            h2 {
+                color: #999;
+            }
+
+            code {
+                background: #2d2d2d;
+                color: #f08;
+            }
+
+            #output {
+                background: #111;
+                border-color: #444;
+                color: #e0e0e0;
+            }
+
+            #copy-btn {
+                background: #2d2d2d;
+                border-color: #555;
+                color: #e0e0e0;
+            }
+
+            #copy-btn:hover {
+                background: #3a3a3a;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Paste to Markdown</h1>
+    <h2>Powered by <a href="https://github.com/mixmark-io/turndown">Turndown</a> with GFM table support</h2>
+
+    <section id="info">
+        <ol>
+            <li>Find the content to convert (<i>e.g.</i>, a webpage or document)</li>
+            <li>Copy it to the clipboard (<code>Ctrl+C</code> / <code>&#8984;+C</code>)</li>
+            <li>Paste into this window (<code>Ctrl+V</code> / <code>&#8984;+V</code>)</li>
+            <li>The Markdown appears below — paste again to replace</li>
+        </ol>
+    </section>
+
+    <div contenteditable="true" id="pastebin"></div>
+
+    <section class="hidden" id="wrapper">
+        <textarea id="output" spellcheck="false" readonly></textarea>
+        <div>
+            <button id="copy-btn">Copy to clipboard</button>
+            <span id="status"></span>
+        </div>
+    </section>
+</body>
+
+</html>

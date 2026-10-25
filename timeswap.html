@@ -44,9 +44,9 @@
             --button-bg: #667eea;
             --button-hover: #5568d3;
             --info-bg: #f8f9fa;
-            --info-text: #666666;
             --border-color: #e0e0e0;
             --shadow: rgba(0, 0, 0, 0.3);
+            --warning-text: #b25e00;
         }
 
         body.dark-mode {
@@ -64,9 +64,9 @@
             --button-bg: #667eea;
             --button-hover: #5568d3;
             --info-bg: #1a2332;
-            --info-text: #a0a0a0;
             --border-color: #2d4059;
             --shadow: rgba(0, 0, 0, 0.6);
+            --warning-text: #ffb547;
         }
 
         * {
@@ -206,15 +206,156 @@
             transition: color 0.3s ease, border-color 0.3s ease;
         }
 
-        .timezone-info {
-            background: var(--info-bg);
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: 20px;
+        .read-as {
+            margin-top: 8px;
             font-size: 13px;
-            color: var(--info-text);
+            color: var(--text-tertiary);
+        }
+
+        .read-as.warning {
+            color: var(--warning-text);
+            font-weight: 600;
+        }
+
+        .zone-picker {
+            position: relative;
+        }
+
+        .zone-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            max-height: 260px;
+            overflow-y: auto;
+            list-style: none;
+            margin-top: 4px;
+            background: var(--input-bg);
+            border: 2px solid var(--input-border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+
+        .zone-options li {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .zone-options li:hover {
+            background: var(--info-bg);
+        }
+
+        .zone-options li[aria-selected="true"] {
+            background: var(--button-bg);
+            color: white;
+        }
+
+        .zones-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .zones-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .zones-header button {
+            flex: 0 0 auto;
+            padding: 4px 14px;
+            font-size: 18px;
+        }
+
+        #addZonePicker {
+            margin-bottom: 10px;
+        }
+
+        .zone-cards {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .zone-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--info-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .zone-card.dragging {
+            opacity: 0.5;
+        }
+
+        .zone-card button {
+            flex: 0 0 auto;
+            padding: 8px 12px;
+        }
+
+        .zone-card .drag-handle {
+            flex: 0 0 auto;
+            padding: 8px 4px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            cursor: grab;
+            user-select: none;
+        }
+
+        .zone-card .drag-handle:hover,
+        .zone-card .drag-handle:focus {
+            background: var(--border-color);
+        }
+
+        .zone-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .zone-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            overflow-wrap: anywhere;
+        }
+
+        .zone-time {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: var(--text-primary);
+            overflow-wrap: anywhere;
+        }
+
+        .zone-meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .zones-empty {
             text-align: center;
-            transition: background 0.3s ease, color 0.3s ease;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            padding: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px 16px;
+            }
         }
 
         .format-section {
@@ -227,6 +368,10 @@
 
         .format-section label {
             margin-bottom: 8px;
+        }
+
+        .input-zone-picker {
+            margin-bottom: 16px;
         }
 
         .format-controls {
@@ -272,24 +417,34 @@
             <label for="localTime">Input Time</label>
             <input type="text" id="localTime"
                 placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 PST or 2025-12-16T08:42:00-05:00)">
+            <div class="read-as" id="readAs" hidden></div>
             <div class="button-group">
                 <button id="copyLocal">Copy Input Time</button>
             </div>
         </div>
 
         <div class="converter-section">
-            <label for="utcTime">UTC</label>
-            <input type="text" id="utcTime" placeholder="Enter timestamp (e.g., 2025-12-16 08:42:00 UTC)">
-            <div class="button-group">
-                <button id="copyUtc">Copy UTC</button>
+            <div class="zones-header">
+                <h2>Timezones</h2>
+                <button id="addZoneBtn" aria-label="Add timezone">+</button>
             </div>
-        </div>
-
-        <div class="timezone-info">
-            Your local timezone: <strong id="localTimezone">Loading...</strong>
+            <div class="zone-picker" id="addZonePicker" hidden>
+                <input type="text" id="addZoneInput" role="combobox" aria-expanded="false" aria-controls="addZoneList"
+                    aria-autocomplete="list" aria-label="Search timezones to add" placeholder="Search timezones…"
+                    autocomplete="off" spellcheck="false">
+                <ul class="zone-options" id="addZoneList" role="listbox" aria-label="Timezones to add" tabindex="-1" hidden></ul>
+            </div>
+            <ul class="zone-cards" id="zoneCards"></ul>
+            <p class="zones-empty" id="zonesEmpty" hidden>No timezones — add one with +</p>
         </div>
 
         <div class="format-section">
+            <label for="inputZone">Input Timezone</label>
+            <div class="zone-picker input-zone-picker">
+                <input type="text" id="inputZone" role="combobox" aria-expanded="false" aria-controls="inputZoneList"
+                    aria-autocomplete="list" autocomplete="off" spellcheck="false">
+                <ul class="zone-options" id="inputZoneList" role="listbox" aria-label="Input timezones" tabindex="-1" hidden></ul>
+            </div>
             <label for="formatInput">Output Format</label>
             <div class="format-controls">
                 <input type="text" id="formatInput" placeholder="YYYY-MM-DD HH:mm:ss z">
@@ -304,7 +459,7 @@
         </div>
 
         <div class="info">
-            Paste or type a timestamp in either field to convert automatically
+            Paste or type a timestamp to convert it to every timezone above
         </div>
     </div>
 
@@ -317,10 +472,16 @@
 
         // Get DOM elements
         const localInput = document.getElementById('localTime');
-        const utcInput = document.getElementById('utcTime');
         const copyLocalBtn = document.getElementById('copyLocal');
-        const copyUtcBtn = document.getElementById('copyUtc');
-        const timezoneDisplay = document.getElementById('localTimezone');
+        const readAsEl = document.getElementById('readAs');
+        const inputZoneInput = document.getElementById('inputZone');
+        const inputZoneList = document.getElementById('inputZoneList');
+        const addZoneBtn = document.getElementById('addZoneBtn');
+        const addZonePicker = document.getElementById('addZonePicker');
+        const addZoneInput = document.getElementById('addZoneInput');
+        const addZoneList = document.getElementById('addZoneList');
+        const zoneCardsEl = document.getElementById('zoneCards');
+        const zonesEmptyEl = document.getElementById('zonesEmpty');
         const formatInput = document.getElementById('formatInput');
         const resetFormatBtn = document.getElementById('resetFormat');
         const themeToggleBtn = document.getElementById('themeToggle');
@@ -358,13 +519,297 @@
         // Theme toggle button event listener
         themeToggleBtn.addEventListener('click', toggleTheme);
 
-        // Detect local timezone
-        const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const timezoneAbbr = dayjs().tz(localTimezone).format('z');
-        timezoneDisplay.textContent = `${localTimezone} (${timezoneAbbr})`;
+        // Timezones
+        const BROWSER_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const INPUT_ZONE_KEY = 'timeswap-input-zone';
+        const ZONES_KEY = 'timeswap-zones';
+        const AUTO = 'auto';
 
-        // Flag to prevent infinite loops during conversion
-        let isConverting = false;
+        const ALL_ZONES = Intl.supportedValuesOf('timeZone');
+        if (!ALL_ZONES.includes('UTC')) {
+            ALL_ZONES.push('UTC');
+        }
+
+        /**
+         * True if the browser accepts the name as a timezone
+         */
+        function isValidZone(zone) {
+            if (typeof zone !== 'string' || zone === '') return false;
+            try {
+                new Intl.DateTimeFormat('en-US', { timeZone: zone });
+                return true;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        /**
+         * Format an offset in minutes east of UTC as UTC±hh:mm
+         */
+        function formatOffset(minutes) {
+            const sign = minutes < 0 ? '-' : '+';
+            const abs = Math.abs(minutes);
+            const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+            const mm = String(abs % 60).padStart(2, '0');
+            return `UTC${sign}${hh}:${mm}`;
+        }
+
+        /**
+         * Short searchable offset form: utc-4, utc+5:30, utc+0
+         */
+        function shortOffset(minutes) {
+            const sign = minutes < 0 ? '-' : '+';
+            const abs = Math.abs(minutes);
+            const mm = abs % 60;
+            return `utc${sign}${Math.floor(abs / 60)}${mm ? ':' + String(mm).padStart(2, '0') : ''}`;
+        }
+
+        /**
+         * Normalize text for search: lowercase, '_' and '/' become spaces
+         */
+        function normalizeSearch(text) {
+            return text.toLowerCase().replace(/[_/]/g, ' ');
+        }
+
+        /**
+         * True when every whitespace-separated query term is a substring of the searchable text
+         */
+        function matchesQuery(query, searchText) {
+            const haystack = normalizeSearch(searchText);
+            return normalizeSearch(query).split(/\s+/).filter(Boolean).every(term => haystack.includes(term));
+        }
+
+        /**
+         * Filter options by the query, listing name matches before abbreviation/offset-only matches
+         */
+        function rankMatches(query, options) {
+            const matched = options.filter(option => matchesQuery(query, option.search));
+            const byName = matched.filter(option => matchesQuery(query, option.value));
+            return byName.concat(matched.filter(option => !matchesQuery(query, option.value)));
+        }
+
+        // Self-check of the matcher (silent on pass)
+        const SAMPLE_SEARCH = 'America/New_York — EDT, UTC-04:00 utc-4';
+        console.assert(matchesQuery('new york', SAMPLE_SEARCH), 'matcher: new york');
+        console.assert(matchesQuery('NEW_YORK', SAMPLE_SEARCH), 'matcher: NEW_YORK');
+        console.assert(matchesQuery('america new', SAMPLE_SEARCH), 'matcher: america new');
+        console.assert(matchesQuery('edt', SAMPLE_SEARCH), 'matcher: edt');
+        console.assert(matchesQuery('utc-4', SAMPLE_SEARCH), 'matcher: utc-4');
+        console.assert(!matchesQuery('tokyo', SAMPLE_SEARCH), 'matcher: tokyo must not match');
+        console.assert(rankMatches('utc', [
+            { value: 'Africa/Abidjan', search: 'Africa/Abidjan — GMT, UTC+00:00 utc+0' },
+            { value: 'UTC', search: 'UTC — UTC, UTC+00:00 utc+0' }
+        ]).map(option => option.value).join() === 'UTC,Africa/Abidjan', 'ranking: name match first');
+        console.assert(shortOffset(-240) === 'utc-4' && shortOffset(330) === 'utc+5:30' && shortOffset(0) === 'utc+0',
+            'shortOffset forms');
+        console.assert(formatOffset(-480) === 'UTC-08:00' && formatOffset(540) === 'UTC+09:00', 'formatOffset forms');
+
+        // Picker options, labelled at the current time
+        const ZONE_OPTIONS = ALL_ZONES.map(zone => {
+            const now = dayjs().tz(zone);
+            const offset = now.utcOffset();
+            const label = `${zone} — ${now.format('z')}, ${formatOffset(offset)}`;
+            return { value: zone, label, search: `${label} ${shortOffset(offset)}` };
+        });
+        const AUTO_LABEL = `Auto (local: ${BROWSER_ZONE})`;
+        const AUTO_OPTION = { value: AUTO, label: AUTO_LABEL, search: AUTO_LABEL };
+
+        // Input zone: 'auto' or an IANA name
+        let inputZone = localStorage.getItem(INPUT_ZONE_KEY) || AUTO;
+        if (inputZone !== AUTO && !isValidZone(inputZone)) {
+            inputZone = AUTO;
+        }
+
+        /**
+         * Load the saved output zone list, falling back to the default
+         */
+        function loadZones() {
+            const defaults = [...new Set(['UTC', BROWSER_ZONE])];
+            const saved = localStorage.getItem(ZONES_KEY);
+            if (saved === null) return defaults;
+            try {
+                const list = JSON.parse(saved);
+                return Array.isArray(list) ? list.filter(isValidZone) : defaults;
+            } catch (err) {
+                return defaults;
+            }
+        }
+
+        let zones = loadZones();
+
+        /**
+         * Persist the output zone list
+         */
+        function saveZones() {
+            localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+        }
+
+        /**
+         * Wire a searchable timezone combobox onto an input and its listbox.
+         * getOptions() returns [{ value, label, search }]; onPick(value) runs on a choice;
+         * onClose() runs whenever the list closes (after a pick, Escape or an outside click). Returns { close }.
+         */
+        function createZonePicker(input, list, getOptions, onPick, onClose) {
+            let query = '';
+            let matches = [];
+            let active = -1;
+
+            function setActive(index) {
+                const rows = list.children;
+                if (active >= 0 && rows[active]) rows[active].removeAttribute('aria-selected');
+                active = index;
+                if (active >= 0 && rows[active]) {
+                    rows[active].setAttribute('aria-selected', 'true');
+                    input.setAttribute('aria-activedescendant', rows[active].id);
+                    rows[active].scrollIntoView({ block: 'nearest' });
+                } else {
+                    input.removeAttribute('aria-activedescendant');
+                }
+            }
+
+            function open() {
+                matches = rankMatches(query, getOptions());
+                list.replaceChildren(...matches.map((option, i) => {
+                    const row = document.createElement('li');
+                    row.id = `${list.id}-opt-${i}`;
+                    row.setAttribute('role', 'option');
+                    row.textContent = option.label;
+                    row.addEventListener('click', () => pick(i));
+                    return row;
+                }));
+                active = -1;
+                setActive(-1);
+                list.hidden = false;
+                input.setAttribute('aria-expanded', 'true');
+            }
+
+            function close() {
+                if (list.hidden) return;
+                list.hidden = true;
+                input.setAttribute('aria-expanded', 'false');
+                setActive(-1);
+                onClose();
+            }
+
+            function pick(index) {
+                const option = matches[index];
+                if (!option) return;
+                onPick(option.value);
+                close();
+            }
+
+            /**
+             * Show every option and select the field's text so the first keystroke replaces it
+             */
+            function openFresh() {
+                query = '';
+                open();
+                input.select();
+            }
+
+            // A mouse focus is followed by a click whose mouseup drops the selection, so redo it there
+            let justFocused = false;
+
+            input.addEventListener('focus', () => {
+                justFocused = true;
+                openFresh();
+            });
+
+            input.addEventListener('click', () => {
+                if (justFocused || list.hidden) openFresh();
+                justFocused = false;
+            });
+
+            input.addEventListener('input', () => {
+                justFocused = false;
+                query = input.value;
+                open();
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (list.hidden) open();
+                    if (matches.length === 0) return;
+                    const step = e.key === 'ArrowDown' ? 1 : -1;
+                    setActive(Math.min(Math.max(active + step, 0), matches.length - 1));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!list.hidden) pick(active >= 0 ? active : 0);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    close();
+                }
+            });
+
+            input.addEventListener('blur', close);
+
+            // Keep focus in the input while clicking a row
+            list.addEventListener('mousedown', (e) => e.preventDefault());
+
+            document.addEventListener('mousedown', (e) => {
+                if (!input.contains(e.target) && !list.contains(e.target)) close();
+            });
+
+            return { close };
+        }
+
+        /**
+         * Text shown in the input picker for the current choice
+         */
+        function inputZoneDisplay() {
+            return inputZone === AUTO ? AUTO_LABEL : inputZone;
+        }
+
+        inputZoneInput.value = inputZoneDisplay();
+        createZonePicker(
+            inputZoneInput,
+            inputZoneList,
+            () => [AUTO_OPTION, ...ZONE_OPTIONS],
+            (value) => {
+                inputZone = value;
+                localStorage.setItem(INPUT_ZONE_KEY, inputZone);
+                render();
+            },
+            () => {
+                inputZoneInput.value = inputZoneDisplay();
+            }
+        );
+
+        const addPicker = createZonePicker(
+            addZoneInput,
+            addZoneList,
+            () => ZONE_OPTIONS.filter(option => !zones.includes(option.value)),
+            (value) => {
+                zones.push(value);
+                saveZones();
+                render();
+            },
+            () => {
+                const hadFocus = addZonePicker.contains(document.activeElement);
+                addZonePicker.hidden = true;
+                addZoneInput.value = '';
+                if (hadFocus) addZoneBtn.focus();
+            }
+        );
+
+        // The document mousedown closes the picker before this click, so remember it was open
+        let addPickerOpenOnPress = false;
+        addZoneBtn.addEventListener('mousedown', () => {
+            addPickerOpenOnPress = !addZonePicker.hidden;
+        });
+
+        addZoneBtn.addEventListener('click', () => {
+            const wasOpen = addPickerOpenOnPress || !addZonePicker.hidden;
+            addPickerOpenOnPress = false;
+            if (wasOpen) {
+                addPicker.close();
+                return;
+            }
+            addZonePicker.hidden = false;
+            addZoneInput.value = '';
+            addZoneInput.focus();
+        });
 
         // Default output format
         const DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
@@ -389,7 +834,9 @@
         ];
 
         /**
-         * Parse a timestamp string robustly
+         * Parse a timestamp string robustly.
+         * Returns { date, isUnix, offset } where offset is the string's own zone in minutes east of UTC,
+         * or null when the string names no zone. Returns null if unparseable.
          */
         function parseTimestamp(input) {
             if (!input || input.trim() === '') {
@@ -397,29 +844,37 @@
             }
 
             const originalInput = input.trim();
-            const numericOffsetPattern = /([+-]\d{2}:?\d{2}|Z)$/i;
-            const hasNumericOffset = numericOffsetPattern.test(originalInput);
+            const numericOffsetMatch = originalInput.match(/([+-])(\d{2}):?(\d{2})$|Z$/i);
+            let numericOffset = null;
+            if (numericOffsetMatch) {
+                numericOffset = numericOffsetMatch[1]
+                    ? (numericOffsetMatch[1] === '-' ? -1 : 1) *
+                        (parseInt(numericOffsetMatch[2], 10) * 60 + parseInt(numericOffsetMatch[3], 10))
+                    : 0;
+            }
 
             // Try parsing as Unix timestamp (seconds or milliseconds)
             if (/^\d+$/.test(originalInput)) {
                 const timestamp = parseInt(originalInput, 10);
                 const parsedUnix = originalInput.length === 10 ? dayjs.unix(timestamp) : dayjs(timestamp);
-                return {
-                    date: parsedUnix,
-                    hasExplicitTimezone: true
-                };
+                return { date: parsedUnix, isUnix: true, offset: null };
             }
 
             // Use Chrono.js for robust parsing (handles timezone abbreviations & natural language)
             if (typeof chrono !== 'undefined') {
-                const chronoResults = chrono.parse(originalInput);
+                // chrono reads "GMT+9" as plain GMT; "GMT+9:00" keeps the offset
+                const chronoInput = originalInput.replace(/\b(GMT[+-]\d{1,2})(?![\d:])/gi, '$1:00');
+                // English first: the multi-language parser reads the "P" of "PST" as PM (ZH parser)
+                let chronoResults = chrono.en.parse(chronoInput);
+                if (chronoResults.length === 0) {
+                    chronoResults = chrono.parse(chronoInput);
+                }
                 if (chronoResults.length > 0) {
-                    const chronoDate = chronoResults[0];
-                    const chronoDayjs = dayjs(chronoDate.start.date());
-                    const chronoHasTimezone = chronoDate.start.isCertain('timezoneOffset');
+                    const start = chronoResults[0].start;
                     return {
-                        date: chronoDayjs,
-                        hasExplicitTimezone: chronoHasTimezone
+                        date: dayjs(start.date()),
+                        isUnix: false,
+                        offset: start.isCertain('timezoneOffset') ? start.get('timezoneOffset') : null
                     };
                 }
             }
@@ -427,88 +882,21 @@
             // Try ISO format and Day.js default parser
             let parsed = dayjs(originalInput);
             if (parsed.isValid()) {
-                return {
-                    date: parsed,
-                    hasExplicitTimezone: hasNumericOffset
-                };
+                return { date: parsed, isUnix: false, offset: numericOffset };
             }
 
             // Try with custom formats
             for (const format of PARSE_FORMATS) {
                 parsed = dayjs(originalInput, format, true);
                 if (parsed.isValid()) {
-                    return {
-                        date: parsed,
-                        hasExplicitTimezone: hasNumericOffset
-                    };
+                    return { date: parsed, isUnix: false, offset: numericOffset };
                 }
             }
 
             return null;
         }
 
-        /**
-         * Convert local time to UTC
-         */
-        function localToUtc(input) {
-            if (isConverting) return;
-            isConverting = true;
-
-            const parsedResult = parseTimestamp(input);
-
-            if (parsedResult) {
-                const { date, hasExplicitTimezone } = parsedResult;
-
-                let utcTime;
-                if (hasExplicitTimezone) {
-                    utcTime = date.tz('UTC');
-                } else {
-                    utcTime = date.tz(localTimezone, true).utc().tz('UTC');
-                }
-
-                utcInput.value = utcTime.format(OUTPUT_FORMAT);
-                utcInput.classList.remove('error');
-                localInput.classList.remove('error');
-            } else if (input.trim() !== '') {
-                utcInput.value = '';
-                localInput.classList.add('error');
-            } else {
-                utcInput.value = '';
-                localInput.classList.remove('error');
-            }
-
-            isConverting = false;
-        }
-
-        /**
-         * Convert UTC to local time
-         */
-        function utcToLocal(input) {
-            if (isConverting) return;
-            isConverting = true;
-
-            // Remove " UTC" suffix if present
-            input = input.replace(/\s+UTC$/i, '').trim();
-
-            const parsedResult = parseTimestamp(input);
-
-            if (parsedResult) {
-                const { date } = parsedResult;
-                // Interpret as UTC and convert to local time
-                const localTime = date.tz('UTC').tz(localTimezone);
-                localInput.value = localTime.format(OUTPUT_FORMAT);
-                localInput.classList.remove('error');
-                utcInput.classList.remove('error');
-            } else if (input.trim() !== '') {
-                localInput.value = '';
-                utcInput.classList.add('error');
-            } else {
-                localInput.value = '';
-                utcInput.classList.remove('error');
-            }
-
-            isConverting = false;
-        }
+        console.assert(parseTimestamp('2026-07-01 12:00:00 GMT+9').offset === 540, 'parse: GMT+9 offset');
 
         /**
          * Copy text to clipboard
@@ -516,9 +904,9 @@
         async function copyToClipboard(text, button) {
             if (!text) return;
 
+            const originalText = button.textContent;
             try {
                 await navigator.clipboard.writeText(text);
-                const originalText = button.textContent;
                 button.textContent = '✓ Copied!';
                 button.classList.add('success');
 
@@ -535,21 +923,155 @@
             }
         }
 
-        // Event listeners for conversion
-        localInput.addEventListener('input', (e) => {
-            localToUtc(e.target.value);
-        });
+        /**
+         * Resolve the input to an absolute instant and describe how it was read.
+         * Returns { instant, text, warning } or null when the input is unparseable.
+         */
+        function interpretInput(raw) {
+            const parsed = parseTimestamp(raw);
+            if (!parsed) return null;
 
-        utcInput.addEventListener('input', (e) => {
-            utcToLocal(e.target.value);
-        });
+            if (parsed.isUnix) {
+                return { instant: parsed.date, text: 'Unix timestamp · already absolute', warning: false };
+            }
+
+            if (parsed.offset !== null) {
+                const instant = parsed.date;
+                const fromInput = `Read as ${formatOffset(parsed.offset)} · from input`;
+                if (inputZone !== AUTO && instant.tz(inputZone).utcOffset() !== parsed.offset) {
+                    return { instant, text: `${fromInput}, overrides picked ${inputZone}`, warning: true };
+                }
+                return { instant, text: fromInput, warning: false };
+            }
+
+            const zone = inputZone === AUTO ? BROWSER_ZONE : inputZone;
+            const instant = parsed.date.tz(zone, true);
+            const source = inputZone === AUTO ? 'Auto' : 'picker';
+            return {
+                instant,
+                text: `Read as ${zone} (${instant.format('z')}) · no zone in input, using ${source}`,
+                warning: false
+            };
+        }
+
+        /**
+         * Move a zone within the list, save, and re-render
+         */
+        function moveZone(from, to) {
+            if (!Number.isInteger(from) || from < 0 || from >= zones.length) return;
+            if (to < 0 || to >= zones.length || from === to) return;
+            const [zone] = zones.splice(from, 1);
+            zones.splice(to, 0, zone);
+            saveZones();
+            render();
+        }
+
+        /**
+         * Create an element with a class and text
+         */
+        function makeEl(tag, className, text) {
+            const el = document.createElement(tag);
+            el.className = className;
+            if (text !== undefined) el.textContent = text;
+            return el;
+        }
+
+        let dragIndex = null;
+
+        /**
+         * Build one output card for a zone
+         */
+        function buildCard(zone, index, instant) {
+            const card = makeEl('li', 'zone-card');
+            const shown = instant ? instant.tz(zone) : dayjs().tz(zone);
+            const timeText = instant ? shown.format(OUTPUT_FORMAT) : '—';
+
+            // A span, not a <button>: Firefox does not start drags from buttons
+            const handle = makeEl('span', 'drag-handle', '⋮⋮');
+            handle.setAttribute('role', 'button');
+            handle.tabIndex = 0;
+            handle.draggable = true;
+            handle.setAttribute('aria-label', `Reorder ${zone}; use arrow keys`);
+            handle.addEventListener('keydown', (e) => {
+                if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                e.preventDefault();
+                const to = index + (e.key === 'ArrowUp' ? -1 : 1);
+                moveZone(index, to);
+                const target = zoneCardsEl.children[Math.min(Math.max(to, 0), zones.length - 1)];
+                target.querySelector('.drag-handle').focus();
+            });
+            handle.addEventListener('dragstart', (e) => {
+                dragIndex = index;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', zone);
+                e.dataTransfer.setDragImage(card, 10, 10);
+                card.classList.add('dragging');
+            });
+            handle.addEventListener('dragend', () => {
+                dragIndex = null;
+                card.classList.remove('dragging');
+            });
+            card.addEventListener('dragover', (e) => {
+                if (dragIndex !== null) e.preventDefault();
+            });
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                // moveZone re-renders and detaches the source, so dragend may never fire
+                const from = dragIndex;
+                dragIndex = null;
+                if (from !== null) moveZone(from, index);
+            });
+
+            const body = makeEl('div', 'zone-body');
+            body.append(
+                makeEl('div', 'zone-name', zone),
+                makeEl('div', 'zone-time', timeText),
+                makeEl('div', 'zone-meta', `${shown.format('z')} · ${formatOffset(shown.utcOffset())}`)
+            );
+
+            const copyBtn = makeEl('button', '', 'Copy');
+            copyBtn.setAttribute('aria-label', `Copy ${zone} time`);
+            copyBtn.addEventListener('click', () => copyToClipboard(instant ? timeText : '', copyBtn));
+
+            const removeBtn = makeEl('button', 'zone-remove', '✕');
+            removeBtn.setAttribute('aria-label', `Remove ${zone}`);
+            removeBtn.addEventListener('click', () => {
+                zones.splice(index, 1);
+                saveZones();
+                render();
+                if (zones.length === 0) {
+                    addZoneBtn.focus();
+                } else {
+                    zoneCardsEl.children[Math.min(index, zones.length - 1)].querySelector('.zone-remove').focus();
+                }
+            });
+
+            card.append(handle, body, copyBtn, removeBtn);
+            return card;
+        }
+
+        /**
+         * Parse the input once and update the error state, the Read-as line and every card
+         */
+        function render() {
+            const raw = localInput.value;
+            const result = interpretInput(raw);
+
+            localInput.classList.toggle('error', !result && raw.trim() !== '');
+            readAsEl.hidden = !result;
+            readAsEl.textContent = result ? result.text : '';
+            readAsEl.classList.toggle('warning', Boolean(result && result.warning));
+
+            const instant = result ? result.instant : null;
+            zoneCardsEl.replaceChildren(...zones.map((zone, i) => buildCard(zone, i, instant)));
+            zonesEmptyEl.hidden = zones.length > 0;
+        }
+
+        // Event listeners
+        localInput.addEventListener('input', render);
 
         // Auto-select text on mouse enter
         localInput.addEventListener('mouseenter', (e) => {
-            e.target.select();
-        });
-
-        utcInput.addEventListener('mouseenter', (e) => {
             e.target.select();
         });
 
@@ -557,13 +1079,8 @@
             e.target.select();
         });
 
-        // Event listeners for copy buttons
         copyLocalBtn.addEventListener('click', () => {
             copyToClipboard(localInput.value, copyLocalBtn);
-        });
-
-        copyUtcBtn.addEventListener('click', () => {
-            copyToClipboard(utcInput.value, copyUtcBtn);
         });
 
         // Event listener for format changes
@@ -572,11 +1089,7 @@
             if (newFormat) {
                 OUTPUT_FORMAT = newFormat;
                 localStorage.setItem('timestampFormat', OUTPUT_FORMAT);
-
-                // Re-convert current values with new format
-                if (localInput.value) {
-                    localToUtc(localInput.value);
-                }
+                render();
             }
         });
 
@@ -585,18 +1098,14 @@
             OUTPUT_FORMAT = DEFAULT_FORMAT;
             formatInput.value = DEFAULT_FORMAT;
             localStorage.setItem('timestampFormat', DEFAULT_FORMAT);
-
-            // Re-convert current values with default format
-            if (localInput.value) {
-                localToUtc(localInput.value);
-            }
+            render();
         });
 
         // Initialize with current time
         window.addEventListener('load', () => {
-            const now = dayjs();
-            localInput.value = now.format(OUTPUT_FORMAT);
-            localToUtc(localInput.value);
+            // Prefill in the effective input zone so it reads back as "now" under any picker or format
+            localInput.value = dayjs().tz(inputZone === AUTO ? BROWSER_ZONE : inputZone).format(OUTPUT_FORMAT);
+            render();
         });
     </script>
 </body>
